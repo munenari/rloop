@@ -1,0 +1,17 @@
+# rloop設定ファイル
+
+## ステータス管理用ファイル
+status_file = '.rloop.status'
+
+## コーディングエージェントを実行するコマンド
+## .prompt に指示が入力されます
+command = ['opencode', 'run', '{{ .prompt }}']
+
+## 指示内容
+goal = """
+ここにAIへの指示を入力します。
+
+## ルール
+- タスク完了時: echo DONE > .rloop.status
+- ユーザーに確認を求める場合: echo PAUSE > .rloop.status
+"""
