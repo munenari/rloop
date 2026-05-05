@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"text/template"
+
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
-func ExecuteCommand(ctx context.Context, commands []string) error {
+func ExecuteCommand(ctx context.Context, commands []string, prompt string) error {
 	if len(commands) == 0 {
 		return fmt.Errorf("no commands")
 	}
@@ -19,26 +23,23 @@ func ExecuteCommand(ctx context.Context, commands []string) error {
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = strings.NewReader(prompt)
 	return cmd.Run()
 }
 
-func BuildPrompt(commands []string, goal string) ([]string, error) {
-	res := make([]string, len(commands))
+func BuildPrompt(goal, statusFile string) (string, error) {
 	v := map[string]any{
-		"prompt": goal,
+		"status_file": statusFile,
 	}
-	for i, s := range commands {
-		buf := &bytes.Buffer{}
-		tpl, err := template.New("").Parse(s)
-		if err != nil {
-			return res, err
-		}
-		if err := tpl.Execute(buf, v); err != nil {
-			return res, err
-		}
-		res[i] = buf.String()
+	buf := &bytes.Buffer{}
+	tpl, err := template.New("").Parse(goal)
+	if err != nil {
+		return "", err
 	}
-	return res, nil
+	if err := tpl.Execute(buf, v); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func ReadStatusFile(statusFilename string) string {
@@ -46,7 +47,13 @@ func ReadStatusFile(statusFilename string) string {
 	if err != nil {
 		return ""
 	}
-	return strings.ToUpper(strings.TrimSpace(string(data)))
+	decoder := unicode.BOMOverride(unicode.UTF8.NewDecoder())
+	reader := transform.NewReader(bytes.NewReader(data), decoder)
+	decoded, err := io.ReadAll(reader)
+	if err != nil {
+		return ""
+	}
+	return strings.ToUpper(strings.TrimSpace(string(decoded)))
 }
 
 func WriteStatusFile(statusFilename, status string) error {

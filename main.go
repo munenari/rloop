@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -46,7 +47,7 @@ func main() {
 	flag.Parse()
 	if *initCmd {
 		if err := os.WriteFile(*configFile, sampleConfig, os.ModePerm); err != nil {
-			log.Fatalln(fmt.Errorf("サンプル設定ファイルの書き込みに失敗しました: err: %w", err))
+			log.Fatalln(fmt.Errorf("rloop: サンプル設定ファイルの書き込みに失敗しました: err: %w", err))
 		}
 		return
 	}
@@ -54,11 +55,11 @@ func main() {
 	defer stop()
 	c := Config{}
 	if _, err := toml.DecodeFile(*configFile, &c); err != nil {
-		log.Fatalln(fmt.Errorf("設定ファイルの読み込みに失敗しました: err: %w", err))
+		log.Fatalln(fmt.Errorf("rloop: 設定ファイルの読み込みに失敗しました: err: %w", err))
 	}
 	x := Runner{config: c, max: *maxIteration}
 	if err := x.Run(ctx); err != nil {
-		log.Fatalln(fmt.Errorf("コマンドの実行に失敗しました: err: %w", err))
+		log.Fatalln(fmt.Errorf("rloop: コマンドの実行に失敗しました: err: %w", err))
 	}
 }
 
@@ -66,11 +67,11 @@ func (x Runner) Run(ctx context.Context) error {
 	if err := util.WriteStatusFile(x.config.StatusFilename, StatusRunning); err != nil {
 		return err
 	}
-	commands, err := util.BuildPrompt(x.config.Command, x.config.Goal)
+	prompt, err := util.BuildPrompt(x.config.Goal, x.config.StatusFilename)
 	if err != nil {
 		return err
 	}
-	for range x.max {
+	for i := range x.max {
 	CHECKSTATUS:
 		select {
 		case <-ctx.Done():
@@ -81,6 +82,7 @@ func (x Runner) Run(ctx context.Context) error {
 			return err
 		default:
 			status := util.ReadStatusFile(x.config.StatusFilename)
+			fmt.Printf("rloop: current status: %s, count: %d\n", status, i)
 			switch status {
 			case StatusDone:
 				return nil
@@ -88,7 +90,8 @@ func (x Runner) Run(ctx context.Context) error {
 				time.Sleep(1 * time.Second)
 				goto CHECKSTATUS
 			default:
-				if err := util.ExecuteCommand(ctx, commands); err != nil {
+				fmt.Println(strings.Join([]string{"prompt:", "----", prompt, "----"}, "\n"))
+				if err := util.ExecuteCommand(ctx, x.config.Command, prompt); err != nil {
 					return err
 				}
 			}

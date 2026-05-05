@@ -4,14 +4,18 @@
 status_file = '.rloop.status'
 
 ## コーディングエージェントを実行するコマンド
-## .prompt に指示が入力されます
-command = ['opencode', 'run', '{{ .prompt }}']
+## stdin で指示が入力されます
+command = ['opencode', 'run', '-']
+
+verify_command = []
+notify_command = []
 
 ## 指示内容
+## .status_file にステータス管理ファイル名が入力されます
 goal = """
 ここにAIへの指示を入力します。
 
 ## ルール
-- タスク完了時: echo DONE > .rloop.status
-- ユーザーに確認を求める場合: echo PAUSE > .rloop.status
+- タスク完了時: echo DONE > {{ .status_file }}
+- ユーザーに確認を求める場合: echo PAUSE > {{ .status_file }}
 """
