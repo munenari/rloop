@@ -18,6 +18,7 @@ func ExecuteLLMCommand(ctx context.Context, commands []string, prompt string) er
 	if len(commands) == 0 {
 		return fmt.Errorf("no commands")
 	}
+	fmt.Println("[exec]", commands)
 	name := commands[0]
 	args := commands[1:]
 	cmd := exec.CommandContext(ctx, name, args...)
@@ -31,6 +32,7 @@ func ExecuteCommand(ctx context.Context, commands []string) ([]byte, error) {
 	if len(commands) == 0 {
 		return nil, nil
 	}
+	fmt.Println("[exec]", commands)
 	name := commands[0]
 	args := commands[1:]
 	cmd := exec.CommandContext(ctx, name, args...)
