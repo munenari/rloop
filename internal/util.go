@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func ExecuteCommand(ctx context.Context, commands []string, prompt string) error {
+func ExecuteLLMCommand(ctx context.Context, commands []string, prompt string) error {
 	if len(commands) == 0 {
 		return fmt.Errorf("no commands")
 	}
@@ -27,9 +27,20 @@ func ExecuteCommand(ctx context.Context, commands []string, prompt string) error
 	return cmd.Run()
 }
 
-func BuildPrompt(goal, statusFile string) (string, error) {
+func ExecuteCommand(ctx context.Context, commands []string) ([]byte, error) {
+	if len(commands) == 0 {
+		return nil, nil
+	}
+	name := commands[0]
+	args := commands[1:]
+	cmd := exec.CommandContext(ctx, name, args...)
+	return cmd.CombinedOutput()
+}
+
+func BuildPrompt(goal, statusFile, verifyResult string) (string, error) {
 	v := map[string]any{
-		"status_file": statusFile,
+		"status_file":   statusFile,
+		"verify_result": verifyResult,
 	}
 	buf := &bytes.Buffer{}
 	tpl, err := template.New("").Parse(goal)

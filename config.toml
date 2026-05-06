@@ -7,8 +7,8 @@ status_file = '.rloop.status'
 ## stdin で指示が入力されます
 command = ['opencode', 'run', '-']
 
-verify_command = []
-notify_command = []
+verify_command = ["go", "test", "./..."]
+notify_command = ["echo", "DONE!"]
 
 ## 指示内容
 ## .status_file にステータス管理ファイル名が入力されます
@@ -18,4 +18,9 @@ goal = """
 ## ルール
 - タスク完了時: echo DONE > {{ .status_file }}
 - ユーザーに確認を求める場合: echo PAUSE > {{ .status_file }}
+
+{{ with .verify_result }}
+## 検証コマンド結果
+{{ .verify_result }}
+{{ end }}
 """
