@@ -5,7 +5,7 @@ import (
 )
 
 func TestBuildPrompt(t *testing.T) {
-	goal := "goal {{ .status_file }} {{ .verify_result }}"
+	goal := "goal {{ .status_file }} {{ with .verify_result }}{{ . }}{{ end }}"
 	res, err := BuildPrompt(goal, "dummy", "dummy2")
 	if err != nil {
 		t.Fatal(err)

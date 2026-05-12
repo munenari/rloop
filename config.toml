@@ -21,6 +21,6 @@ goal = """
 
 {{ with .verify_result }}
 ## 検証コマンド結果
-{{ .verify_result }}
+{{ . }}
 {{ end }}
 """
